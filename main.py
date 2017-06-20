@@ -15,47 +15,48 @@ env = FrozenLakeEnv()
 def value_iteration(env, epsilon=0.001, discount_factor=0.9999):
     """
         Value Iteration Algorithm.
-        :param env: OpenAI environment. env.P represents the transition probabilities of the environment.
-        :param theta: float, threshold for convergence
-        :param discount_factor: float, discount factor
-        :return: tuple(np.array([n_statesxn_actions]), float), (policy,V) , the optimal policy, and optimal value function
+        :param env: OpenAI environment. In this environment, env.P is a dictionary with two keys - state, action- that 
+                    contains the transition probabilities of the environment, the next state and the reward for each 
+                    possible pair (state, action) in a tuple.
+        :param epsilon: float, threshold for convergence
+        :param discount_factor: float, discount factor, should be <1 for convergence.
+        :return: tuple(np.array([n_states x n_actions]), float), (policy,V) , the optimal policy, and optimal value function
     """
     # Initialize value function
-    V = np.zeros(env.nS)
+    values = np.zeros(env.nS)
     converged = False
     while not converged:
         # Stopping condition
         delta = 0
         # Go through all states
-        for s in range(env.nS):
+        for s in range(env.nS):  # Go through all states
             # Find the best action
-            A = np.zeros(env.nA)
-            for a in range(env.nA):
-                for prob, next_state, reward, done in env.P[s][a]:
-                    A[a] += prob * (reward + discount_factor * V[next_state])
+            actions = np.zeros(env.nA)  # Initialize actions vector
+            for a in range(env.nA):  # Go through all actions
+                for prob, next_state, reward, done in env.P[s][a]:  # Compute each action value
+                    actions[a] += prob * (reward + discount_factor * values[next_state])
             # Get the value of best action
-            best_action_value = np.max(A)
+            best_action_value = np.max(actions)
             # Update delta for this state
-            delta = max(delta, np.abs(best_action_value - V[s]))
+            delta = max(delta, np.abs(best_action_value - values[s]))
             # Update value function
-            V[s] = best_action_value
+            values[s] = best_action_value
         # Convergence criteria
         if delta < epsilon:
             converged = True
-
 
         # Determine optimal policy through value function
         policy = np.zeros([env.nS, env.nA])
         for s in range(env.nS):
             # Gest best actions for each state
-            A = np.zeros(env.nA)
+            actions = np.zeros(env.nA)
             for a in range(env.nA):
                 for prob, next_state, reward, done in env.P[s][a]:
-                    A[a] += prob * (reward + discount_factor * V[next_state])
-            best_action = np.argmax(A)
+                    actions[a] += prob * (reward + discount_factor * values[next_state])
+            best_action = np.argmax(actions)
             # Get optimal policy with an indicator matrix
             policy[s, best_action] = 1.0
-        return policy, V
+        return policy, values
 
 
 def policy_iteration():
@@ -71,16 +72,9 @@ print("Policy Probability Distribution:")
 print(policy)
 print("")
 
-# print("Reshaped Grid Policy (0=up, 1=right, 2=down, 3=left):")
-# print(np.reshape(np.argmax(policy, axis=1), env.shape))
-# print("")
-
 print("Value Function:")
 print(v)
 print("")
 
-print("Reshaped Grid Value Function:")
-print(v.reshape(env.shape))
-print("")
 
 
